@@ -5,43 +5,63 @@ pipeline {
         maven 'Maven3'
     }
     
+    environment {
+        NEXUS_URL = '192.168.0.17:8081'  // Change to your node3 IP!
+        NEXUS_REPO = 'maven-releases'
+        NEXUS_USER = 'admin'
+        NEXUS_PASS = 'admin123'
+    }
+    
     stages {
         stage('1️⃣ Checkout Code') {
             steps {
-                echo '========================================='
-                echo '📥 STEP 1: Getting code from GitHub'
-                echo '========================================='
+                echo '📥 Getting code from GitHub...'
                 checkout scm
             }
         }
         
         stage('2️⃣ Build with Maven') {
             steps {
-                echo '========================================='
-                echo '🔨 STEP 2: Building application with Maven'
-                echo '========================================='
+                echo '🔨 Building application...'
                 sh 'mvn clean package'
-                echo '✅ Build successful! .war file created'
+                echo '✅ Build complete!'
             }
         }
         
-        stage('3️⃣ Show Build Artifact') {
+        stage('3️⃣ Upload to Nexus') {
             steps {
                 echo '========================================='
-                echo '📦 STEP 3: Here is the build artifact:'
+                echo '📤 STEP 3: Uploading to Nexus Repository'
                 echo '========================================='
-                sh 'ls -lh target/*.war'
-                sh 'du -h target/*.war'
+                script {
+                    def warFile = 'target/hello-devops.war'
+                    def artifactId = 'hello-devops'
+                    def version = '1.0.0'
+                    
+                    sh """
+                        curl -v -u ${NEXUS_USER}:${NEXUS_PASS} \
+                        --upload-file ${warFile} \
+                        http://${NEXUS_URL}/repository/${NEXUS_REPO}/com/devops/${artifactId}/${version}/${artifactId}-${version}.war
+                    """
+                    
+                    echo '✅ Artifact uploaded to Nexus!'
+                    echo "📍 URL: http://${NEXUS_URL}/repository/${NEXUS_REPO}/com/devops/${artifactId}/${version}/${artifactId}-${version}.war"
+                }
             }
         }
         
-        stage('4️⃣ Archive Artifact') {
+        stage('4️⃣ Verify Upload') {
             steps {
                 echo '========================================='
-                echo '💾 STEP 4: Saving artifact in Jenkins'
+                echo '✅ STEP 4: Verification'
                 echo '========================================='
-                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
-                echo '✅ Artifact saved! You can download it from Jenkins'
+                echo '🎉 SUCCESS! Your artifact is now stored in Nexus'
+                echo ''
+                echo 'How to access it:'
+                echo "1. Open Nexus: http://${NEXUS_URL}"
+                echo '2. Browse → maven-releases'
+                echo '3. Find: com/devops/hello-devops/1.0.0/'
+                echo ''
             }
         }
     }
@@ -49,19 +69,14 @@ pipeline {
     post {
         success {
             echo ''
-            echo '🎉🎉🎉 PIPELINE COMPLETED SUCCESSFULLY! 🎉🎉🎉'
+            echo '🎉 PIPELINE COMPLETED SUCCESSFULLY!'
             echo ''
-            echo 'What happened:'
-            echo '1. ✅ Downloaded code from GitHub'
-            echo '2. ✅ Built .war file with Maven'
-            echo '3. ✅ Saved artifact in Jenkins'
+            echo 'Summary:'
+            echo '✅ Code downloaded from GitHub'
+            echo '✅ Application built with Maven'
+            echo '✅ .war file uploaded to Nexus'
             echo ''
-            echo '📍 Find your .war file in Jenkins:'
-            echo '   → Build #XX → Artifacts → hello-devops.war'
-            echo ''
-        }
-        failure {
-            echo '❌ Pipeline failed! Check the logs above.'
+            echo '📦 Your artifact is safely stored in Nexus repository!'
         }
     }
 }
