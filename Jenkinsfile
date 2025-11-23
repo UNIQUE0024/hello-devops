@@ -96,7 +96,7 @@ pipeline {
 5. Scroll down to **Pipeline** section
 6. Definition: Select **"Pipeline script from SCM"**
 7. SCM: Select **"Git"**
-8. Repository URL: `https://github.com/YOUR-USERNAME/hello-devops`
+8. Repository URL: `https://github.com/UNIQUE0024/hello-devops`
    (Replace YOUR-USERNAME with your actual GitHub username!)
 9. Branch: `*/main` (or `*/master` if your default branch is master)
 10. Script Path: `Jenkinsfile`
